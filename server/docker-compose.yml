@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:latest
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: myapp
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "user", "--password=password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5  
+
+  # MongoDB Database (Optional for Future)
+  mongodb:
+    image: mongo:latest
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    # Commenting it out since you're using MySQL now
+    deploy:
+      replicas: 0  # Set to 1 when you switch to MongoDB
+
+  # User Microservice
+  user:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy    # This ensures MySQL is ready to accept connections
+    environment:
+      - NODE_ENV=production
+      - DB_TYPE=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_NAME=myapp
+
+  # Notification Microservice
+  notification:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    restart: always
+    depends_on:
+      - "mysql"  # Use MySQL now, can switch to MongoDB later
+    environment:
+      - NODE_ENV=production
+      - DB_TYPE=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_NAME=myapp
+
+  # Nginx Reverse Proxy
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "85:85"
+    depends_on:
+      - user
+      - notification
+
+volumes:
+  mysql-data:
+  mongo-data:
+
+
