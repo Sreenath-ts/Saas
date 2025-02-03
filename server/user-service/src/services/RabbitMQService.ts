@@ -2,7 +2,7 @@ import { ConsumeMessage } from "amqplib";
 import { rabbitMQ } from "../utils/RabbitMQ";
 import config from "../config/config";
 
-const {notification_queue_request,notification_queue_response} = config.queues;
+const {notification_queue_request} = config.queues;
 
 
 class RabbitMQServices {
@@ -17,10 +17,10 @@ class RabbitMQServices {
         try {
             await rabbitMQ.init()
             // Setup queue with DLQ
-            const { dlExchangeName, dlQueueName } = await rabbitMQ.setupDLQ(notification_queue_response);
+            const { dlExchangeName, dlQueueName } = await rabbitMQ.setupDLQ(notification_queue_request);
             
             console.log(`RabbitMQ connected and notification queues asserted.
-                        Main Queue: ${notification_queue_response}
+                        Main Queue: ${notification_queue_request}
                         DL Exchange: ${dlExchangeName}
                         DL Queue: ${dlQueueName}`);
 
@@ -35,25 +35,27 @@ class RabbitMQServices {
     }
 
     async notifyUser(
+        type: string,
         receiverId: string,
         messageContent: string,
         userEmail: string,
-        senderEmail: string,
-        senderName: string,
-        type: string
+        userName:string,
+        senderEmail?: string,
+        senderName?: string,
     ) {
         try {
             const notificationPayload = {
                 type,
                 userId: receiverId,
                 userEmail,
+                userName,
                 message: messageContent,
                 from: senderEmail,
                 fromName: senderName,
                 timestamp: new Date().toISOString()
             };
 
-            await rabbitMQ.publish(notification_queue_response, notificationPayload, {
+            await rabbitMQ.publish(notification_queue_request, notificationPayload, {
                 persistent: true,
                 messageId: `notify_${Date.now()}_${receiverId}`,
                 contentType: 'application/json'

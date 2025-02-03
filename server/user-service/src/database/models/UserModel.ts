@@ -41,7 +41,7 @@ export interface IUser extends RowDataPacket {
   retrieveById(userId: number): Promise<IUser | undefined> {
     return new Promise((resolve, reject) => {
       connection.query<IUser[]>(
-        "SELECT * FROM user WHERE id = ?",
+        "SELECT * FROM users WHERE id = ?",
         [userId],
         (err, res) => {
           if (err) reject(err);

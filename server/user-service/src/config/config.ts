@@ -14,8 +14,7 @@ if (!parsedDB_URI || typeof parsedDB_URI !== "object") {
 }
 
 const queues = { 
-    notification_queue_request: "NOTIFICATIONS_QUEUE_REQUEST",
-    notification_queue_response: "NOTIFICATIONS_QUEUE_RESPONSE" 
+    notification_queue_request: "NOTIFICATIONS_QUEUE_REQUEST"
  };
 
 

@@ -2,7 +2,7 @@ import { ConsumeMessage } from "amqplib";
 import { rabbitMQ } from "../utils/RabbitMQ";
 import config from "../config/config";
 import { EmailService } from "./EmailService";
-const {notification_queue_request,notification_queue_response} = config.queues;
+const {notification_queue_request} = config.queues;
 
 class RabbitMQServices {
     private readonly retryInterval = 5000;
@@ -60,7 +60,7 @@ class RabbitMQServices {
         // Implement your notification logic here
         const {type} = content;
         switch (type) {
-         case 'Welcome-email':
+         case 'welcome':
             const {userEmail,userName,message} = content;
              await this.emailService.sendEmail(
                 userEmail,

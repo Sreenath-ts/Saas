@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { User, IUser } from "../database";
 import { ApiError, encryptPassword, isPasswordMatch } from "../utils";
 import config from "../config/config";
+import { rabbitMQServices } from "../services/RabbitMQService";
 
 const jwtSecret = config.JWT_SECRET as string;
 const COOKIE_EXPIRATION_DAYS = 90; // cookie expiration in days
@@ -15,7 +16,7 @@ const cookieOptions = {
     httpOnly: true
 };
 
-const register = async (req:any,res: any ) => {
+const register = async (req:any,res: any,next:any ) => {
     try {
         const { name, email, password }:IUser = req.body;
         const userExists = await User.retrieveByValue(email,"email");
@@ -31,16 +32,14 @@ const register = async (req:any,res: any ) => {
             email:user.email
         };
         
-        return res.json({
+         res.json({
             status: 200,
             message: "User registered successfully!",
             data: userData,
         });
+        rabbitMQServices.notifyUser('welcome',user._id,"Welcome to our app",user.email,user.name)
     } catch (error:any) {
-        return res.json({
-            status: 500,
-            message: error.message,
-        });
+         next(error);
     }
 }
 
@@ -54,7 +53,7 @@ const createSendToken = async (user: IUser, res: Response) => {
     return token;
 }
 
-const login = async (req: any, res: any) => {
+const login = async (req: any, res: any, next:any) => {
     try {
         const { email, password } = req.body;
         const user = await User.retrieveByValue(email,'email');
@@ -73,10 +72,7 @@ const login = async (req: any, res: any) => {
             token,
         });
     } catch (error:any) {
-        return res.json({
-            status: 500,
-            message: error.message,
-        });
+       next(error)
     }
 }
 
